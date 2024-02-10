@@ -31,7 +31,7 @@ async function run() {
     });
     app.get("/user/:email", async (req, res) => {
       const email = req.params.email;
-      console.log(email);
+
       const user = await usersCollection.findOne({ email: email });
       res.json(user);
     });
@@ -42,9 +42,10 @@ async function run() {
       console.log(donation);
       res.json(donation);
     });
-    app.get("/create-donation", async (req, res) => {
-      const newDonation = req.body.donation;
-      const user = req.body.user;
+    app.post("/create-donation", async (req, res) => {
+      const data = req.body;
+      const newDonation = data.donation;
+      const user = data.user;
       if (user.role == "admin") {
         const result = await donationsCollection.insertOne(newDonation);
         res.json({
@@ -58,6 +59,21 @@ async function run() {
           message: "You are not authorized to create a donation",
         });
       }
+    });
+    app.put("/update-user/:id", async (req, res) => {
+      const id = new ObjectId(req.params.id);
+      const updatedUser = req.body;
+      console.log(updatedUser);
+      const result = await usersCollection.updateOne(
+        { _id: id },
+        { $set: updatedUser }
+      );
+      console.log(result);
+      res.json({
+        success: true,
+        message: "User updated successfully",
+        data: result,
+      });
     });
     app.put("/update-donation/:id", async (req, res) => {
       const id = req.params.id;
