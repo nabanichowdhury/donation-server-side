@@ -76,13 +76,16 @@ async function run() {
       });
     });
     app.put("/update-donation/:id", async (req, res) => {
-      const id = req.params.id;
-      const updatedDonation = req.body;
-      if (updatedDonation.user == "admin") {
+      const id = new ObjectId(req.params.id);
+      const updatedDonation = req.body.donation;
+      const user = req.body.user;
+      console.log(user);
+      if (user.role == "admin") {
         const result = await donationsCollection.updateOne(
           { _id: id },
           { $set: updatedDonation }
         );
+        console.log(result);
         res.json({
           success: true,
           message: "Donation updated successfully",
@@ -98,7 +101,7 @@ async function run() {
     app.delete("/delete-donation/:id", async (req, res) => {
       const id = new ObjectId(req.params.id);
       const user = req.body;
-      console.log(user);
+
       console.log(id);
       if (user.role == "admin") {
         const result = await donationsCollection.deleteOne({ _id: id });
@@ -134,8 +137,16 @@ async function run() {
       });
     });
     app.put("/donate/:id", async (req, res) => {
-      const user = req.body;
+      const data = req.body;
       const donationId = new ObjectId(req.params.id);
+      const user = data.user;
+      const donation = data.donation;
+      const userId = new ObjectId(user._id);
+
+      await usersCollection.updateOne(
+        { _id: userId },
+        { $push: { donations: donation } }
+      );
 
       const result = await donationsCollection.updateOne(
         { _id: donationId },
