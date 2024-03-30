@@ -7,7 +7,7 @@ const port = 8000 || process.env.PORT;
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri =
   "mongodb+srv://dbadmin:q32S6qhXnlkKtLM5@cluster0.vdcw4ws.mongodb.net/?retryWrites=true&w=majority";
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
+
 const client = new MongoClient(uri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -23,6 +23,32 @@ async function run() {
     const donationsCollection = database.collection("donations");
     const helpRequestCollection = database.collection("helpRequests");
 
+    app.put("/update-request/:id", async (req, res) => {
+      const id = new ObjectId(req.params.id);
+      console.log(id);
+
+      const result = await helpRequestCollection.updateOne(
+        { _id: id },
+        { $set: { hasRead: true } }
+      );
+      console.log(result);
+      res.json({
+        success: true,
+        message: "Request updated successfully",
+        data: result,
+      });
+    });
+
+    app.delete("/delete-request/:id", async (req, res) => {
+      const id = new ObjectId(req.params.id);
+
+      const result = await helpRequestCollection.deleteOne({ _id: id });
+      res.json({
+        success: true,
+        message: "Request deleted successfully",
+        data: result,
+      });
+    });
     app.get("/notification", async (req, res) => {
       const helpRequests = await helpRequestCollection
         .find({ hasRead: false })
@@ -53,7 +79,7 @@ async function run() {
       const id = new ObjectId(req.params.id);
 
       const donation = await donationsCollection.findOne({ _id: id });
-      console.log(donation);
+
       res.json(donation);
     });
     app.post("/create-donation", async (req, res) => {
