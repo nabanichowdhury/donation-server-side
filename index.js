@@ -1,29 +1,43 @@
 const express = require("express");
 const cors = require("cors");
 const app = express();
-app.use(express.json());
-app.use(cors());
-const port = 8000;
+
+const port = 8000 || process.env.PORT;
 
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri =
   "mongodb+srv://dbadmin:q32S6qhXnlkKtLM5@cluster0.vdcw4ws.mongodb.net/?retryWrites=true&w=majority";
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true,
-  },
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  serverApi: ServerApiVersion.v1,
 });
+app.use(cors());
+app.use(express.json());
+
 async function run() {
   try {
-    await client.connect();
-    console.log("Connected to MongoDB");
-
     const database = client.db("donation_database");
     const usersCollection = database.collection("users");
     const donationsCollection = database.collection("donations");
+    const helpRequestCollection = database.collection("helpRequests");
+
+    app.get("/notification", async (req, res) => {
+      const helpRequests = await helpRequestCollection
+        .find({ hasRead: false })
+        .toArray();
+      res.json(helpRequests);
+    });
+    app.post("/create-request", async (req, res) => {
+      const helpRequest = req.body;
+      const result = await helpRequestCollection.insertOne(helpRequest);
+      res.json({
+        success: true,
+        message: "Help request created successfully",
+        data: result,
+      });
+    });
 
     app.get("/donations", async (req, res) => {
       const donations = await donationsCollection.find({}).toArray();
@@ -166,8 +180,6 @@ async function run() {
         .toArray();
       res.json(donations);
     });
-  } catch (err) {
-    console.error("Error connecting to MongoDB:", err);
   } finally {
   }
 }
